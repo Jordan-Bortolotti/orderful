@@ -1,16 +1,13 @@
 import {
   BadRequestException,
-  Body,
   Controller,
   Get,
-  ParseFilePipeBuilder,
   Post,
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { XmlService } from './xml.service';
-import { SampleDto } from '../formats/sample.dto';
 import { diskStorage } from 'multer';
 import { randomUUID } from 'node:crypto';
 import { extname } from 'node:path';
@@ -42,7 +39,6 @@ export class XmlController {
         fileSize: 1024 * 1024 * 10, // 5MB limit
       },
       fileFilter: (req, file, callback) => {
-        // Allow only images and PDFs
         if (file.mimetype.match(/\/(xml|text|txt|json)$/)) {
           callback(null, true);
         } else {
@@ -53,7 +49,7 @@ export class XmlController {
   )
   @Post('upload')
   uploadFile(@UploadedFile() file: Express.Multer.File) {
-    this.logger.log('\nUploaded File: ', file);
+    this.logger.log('Uploaded File: ', file);
     if (!file) {
       throw new BadRequestException('File upload failed');
     }
