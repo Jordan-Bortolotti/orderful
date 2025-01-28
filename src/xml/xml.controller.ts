@@ -31,7 +31,7 @@ export class XmlController {
         destination: './uploads',
         filename: (req, file, callback) => {
           const uniqueName = `${file.originalname}_${randomUUID()}`;
-          const ext = extname(file.originalname); 
+          const ext = extname(file.originalname);
           callback(null, `${uniqueName}${ext}`);
         },
       }),
@@ -39,7 +39,7 @@ export class XmlController {
         fileSize: 1024 * 1024 * 10, // 10MB
       },
       fileFilter: (req, file, callback) => {
-        if (file.mimetype.match(/\/(xml|text|txt|json)$/)) {
+        if (file.mimetype.match(/\/(xml)$/)) {
           callback(null, true);
         } else {
           callback(new BadRequestException('Unsupported file type'), false);
@@ -48,8 +48,8 @@ export class XmlController {
     }),
   )
   @Post('upload')
-  uploadFile(@UploadedFile() file: Express.Multer.File) {
-    this.logger.log('Uploaded File: ', file);
+  uploadFile(@UploadedFile() file: Express.Multer.File | null) {
+    this.logger.log('Uploaded File: ', JSON.stringify(file));
     if (!file) {
       throw new BadRequestException('File upload failed');
     }

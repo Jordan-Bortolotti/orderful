@@ -2,33 +2,21 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException } from '@nestjs/common';
 import { XmlController } from '../../../src/xml/xml.controller';
 import { XmlService } from '../../../src/xml/xml.service';
-import { Logger } from 'nestjs-pino';
 
 describe('XmlController', () => {
   let controller: XmlController;
-  let xmlService: XmlService;
-  let logger: Logger;
 
   const mockXmlService = {
     getHello: jest.fn(),
   };
 
-  const mockLogger = {
-    log: jest.fn(),
-  };
-
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [XmlController],
-      providers: [
-        { provide: XmlService, useValue: mockXmlService },
-        { provide: Logger, useValue: mockLogger },
-      ],
+      providers: [{ provide: XmlService, useValue: mockXmlService }],
     }).compile();
 
     controller = module.get<XmlController>(XmlController);
-    xmlService = module.get<XmlService>(XmlService);
-    logger = module.get<Logger>(Logger);
   });
 
   afterEach(() => {
@@ -43,7 +31,7 @@ describe('XmlController', () => {
       const result = controller.sayHello();
 
       expect(result).toBe(expectedMessage);
-      expect(xmlService.getHello).toHaveBeenCalled();
+      expect(mockXmlService.getHello).toHaveBeenCalled();
     });
   });
 
@@ -63,11 +51,9 @@ describe('XmlController', () => {
         path: `/uploads/${mockFile.filename}`,
       });
     });
-    
+
     it('should throw BadRequestException when an invalid file is uploaded', () => {
-      expect(() => controller.uploadFile(<any>undefined)).toThrow(
-        BadRequestException,
-      );
+      expect(() => controller.uploadFile(null)).toThrow(BadRequestException);
     });
   });
 });

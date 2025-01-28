@@ -13,4 +13,9 @@ async function bootstrap() {
   app.useLogger(app.get(Logger));
   await app.listen(process.env.PORT ?? 3000);
 }
-bootstrap();
+bootstrap()
+  .then()
+  .catch((e) => {
+    console.log(e);
+    process.exit(1);
+  });
