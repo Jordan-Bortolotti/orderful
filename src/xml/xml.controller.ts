@@ -30,13 +30,13 @@ export class XmlController {
       storage: diskStorage({
         destination: './uploads',
         filename: (req, file, callback) => {
-          const uniqueName = `${file.originalname}_${randomUUID()}`; // Generate unique filename
-          const ext = extname(file.originalname); // Get file extension
+          const uniqueName = `${file.originalname}_${randomUUID()}`;
+          const ext = extname(file.originalname); 
           callback(null, `${uniqueName}${ext}`);
         },
       }),
       limits: {
-        fileSize: 1024 * 1024 * 10, // 5MB limit
+        fileSize: 1024 * 1024 * 10, // 10MB
       },
       fileFilter: (req, file, callback) => {
         if (file.mimetype.match(/\/(xml|text|txt|json)$/)) {
