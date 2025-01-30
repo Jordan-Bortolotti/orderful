@@ -1,10 +1,10 @@
-import { Injectable, FileValidator, Inject } from '@nestjs/common';
+import { Injectable, FileValidator } from '@nestjs/common';
 import { XMLParser } from 'fast-xml-parser';
 
 export enum FILE_TYPES {
   XML = 'xml',
   JSON = 'json',
-  TEXT = 'text'
+  TEXT = 'text',
 }
 
 export interface IFileTypeOptions {
@@ -13,12 +13,9 @@ export interface IFileTypeOptions {
 
 @Injectable()
 export class ValidateFileParsing extends FileValidator {
-  protected validationOptions: { acceptedFileType: string };
-  
+  protected validationOptions: { acceptedFileType: FILE_TYPES };
 
-  constructor(
-    options: IFileTypeOptions,
-  ) {
+  constructor(options: IFileTypeOptions) {
     super(options);
     this.validationOptions.acceptedFileType = options.fileType;
   }
@@ -27,20 +24,32 @@ export class ValidateFileParsing extends FileValidator {
     let result = false;
     try {
       switch (this.validationOptions.acceptedFileType) {
-        case (FILE_TYPES.JSON):
-          // parse JSON
-        case (FILE_TYPES.TEXT):
-          // parse text
-        case (FILE_TYPES.XML):
-          // parse XML
-          const parser = new XMLParser();
-          parser.parse(file?.buffer.toString(), true); // throws error if xml validation fails
+        case FILE_TYPES.JSON: {
+          // throws error if json parsing fails
+          JSON.parse(file?.buffer.toString());
           result = true;
+
           break;
-        default:
+        }
+        case FILE_TYPES.TEXT: {
+          // parse text
           break;
+        }
+        case FILE_TYPES.XML: {
+          const parser = new XMLParser();
+          // throws error if xml parsing fails
+          parser.parse(file?.buffer.toString(), true);
+          result = true;
+
+          break;
+        }
+
+        default: {
+          break;
+        }
       }
     } catch (error) {
+      console.error(error);
       return false;
     }
     return result;

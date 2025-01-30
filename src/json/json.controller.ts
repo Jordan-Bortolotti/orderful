@@ -8,29 +8,30 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { XmlService } from './xml.service';
+import { JsonService } from './json.service';
 import { Logger } from 'nestjs-pino';
 import {
   FILE_TYPES,
   ValidateFileParsing,
 } from '../common/pipes/parse-file-pipe';
-import { JsonService } from '../json/json.service';
+import { XmlService } from '../xml/xml.service';
 
-@Controller('xml')
-export class XmlController {
+@Controller('json')
+export class JsonController {
   constructor(
-    private readonly xmlService: XmlService,
     private readonly jsonService: JsonService,
+    private readonly xmlService: XmlService,
+    // private readonly textService: TextService,
     private readonly logger: Logger,
   ) {}
 
-  @Post('/to/json')
+  @Post('/to/xml')
   @UseInterceptors(FileInterceptor('file'))
-  convertXmlToJson(
+  convertJsonToXml(
     @UploadedFile(
       new ParseFilePipeBuilder()
-        .addFileTypeValidator({ fileType: 'xml' })
-        .addValidator(new ValidateFileParsing({ fileType: FILE_TYPES.XML }))
+        .addFileTypeValidator({ fileType: 'application/json' })
+        .addValidator(new ValidateFileParsing({ fileType: FILE_TYPES.JSON }))
         .build({
           fileIsRequired: true,
           errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY,
@@ -40,11 +41,11 @@ export class XmlController {
         }),
     )
     file: Express.Multer.File,
-  ): Record<string, any> {
+  ) {
     let inputDataToTransform: Record<string, any>;
     try {
-      inputDataToTransform = this.xmlService.parseToPlainObject(file);
-      return this.jsonService.convertToJson(inputDataToTransform);
+      inputDataToTransform = this.jsonService.parseToPlainObject(file);
+      return this.xmlService.convertToXml(inputDataToTransform);
     } catch (error) {
       this.logger.error(error);
       throw error;
@@ -53,11 +54,11 @@ export class XmlController {
 
   @Post('/to/text')
   @UseInterceptors(FileInterceptor('file'))
-  convertXmlToText(
+  convertJsonToText(
     @UploadedFile(
       new ParseFilePipeBuilder()
-        .addFileTypeValidator({ fileType: 'xml' })
-        .addValidator(new ValidateFileParsing({ fileType: FILE_TYPES.XML }))
+        .addFileTypeValidator({ fileType: 'json' })
+        .addValidator(new ValidateFileParsing({ fileType: FILE_TYPES.JSON }))
         .build({
           fileIsRequired: true,
           errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY,
@@ -67,10 +68,10 @@ export class XmlController {
         }),
     )
     file: Express.Multer.File,
-  ): Record<string, any> {
+  ) {
     let inputDataToTransform: Record<string, any>;
     try {
-      inputDataToTransform = this.xmlService.parseToPlainObject(file);
+      inputDataToTransform = this.jsonService.parseToPlainObject(file);
     } catch (error) {
       this.logger.error(error);
       throw error;
