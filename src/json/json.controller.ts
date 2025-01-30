@@ -10,11 +10,8 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { JsonService } from './json.service';
 import { Logger } from 'nestjs-pino';
-import {
-  FILE_TYPES,
-  ValidateFileParsing,
-} from '../common/pipes/parse-file-pipe';
 import { XmlService } from '../xml/xml.service';
+import { ValidateJsonFileParsing, FILE_TYPES } from '../common/pipes/parse-json-file.pipe';
 
 @Controller('json')
 export class JsonController {
@@ -31,7 +28,7 @@ export class JsonController {
     @UploadedFile(
       new ParseFilePipeBuilder()
         .addFileTypeValidator({ fileType: 'application/json' })
-        .addValidator(new ValidateFileParsing({ fileType: FILE_TYPES.JSON }))
+        .addValidator(new ValidateJsonFileParsing({ fileType: FILE_TYPES.JSON }))
         .build({
           fileIsRequired: true,
           errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY,
@@ -58,7 +55,7 @@ export class JsonController {
     @UploadedFile(
       new ParseFilePipeBuilder()
         .addFileTypeValidator({ fileType: 'json' })
-        .addValidator(new ValidateFileParsing({ fileType: FILE_TYPES.JSON }))
+        .addValidator(new ValidateJsonFileParsing({ fileType: FILE_TYPES.JSON }))
         .build({
           fileIsRequired: true,
           errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY,
