@@ -1,62 +1,57 @@
 import {
-  BadRequestException,
   Controller,
-  Get,
+  HttpStatus,
+  Inject,
+  ParseFilePipeBuilder,
   Post,
+  UnprocessableEntityException,
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { XmlService } from './xml.service';
-import { diskStorage } from 'multer';
-import { randomUUID } from 'node:crypto';
-import { extname } from 'node:path';
 import { Logger } from 'nestjs-pino';
+import { FILE_TYPES, ValidateFileParsing } from '../common/pipes/parse-file-pipe';
 
 @Controller()
 export class XmlController {
   constructor(
     private readonly xmlService: XmlService,
-    private readonly logger: Logger,
+    private readonly logger: Logger
   ) {}
 
-  @Get()
-  sayHello() {
-    return this.xmlService.getHello();
-  }
 
+  @Post('xml/to/{*format}')
   @UseInterceptors(
-    FileInterceptor('file', {
-      storage: diskStorage({
-        destination: './uploads',
-        filename: (req, file, callback) => {
-          const uniqueName = `${file.originalname}_${randomUUID()}`;
-          const ext = extname(file.originalname);
-          callback(null, `${uniqueName}${ext}`);
+    FileInterceptor('file')
+  )
+  xmlConvertToFormat(@UploadedFile(
+    new ParseFilePipeBuilder()
+      .addFileTypeValidator(
+        { fileType: 'xml' },
+      )
+      .addValidator(
+        new ValidateFileParsing(
+          { fileType: FILE_TYPES.XML }
+        ),
+      )
+      .build({
+        fileIsRequired: true,
+        errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+        exceptionFactory(error) {
+          throw new UnprocessableEntityException(error);
         },
       }),
-      limits: {
-        fileSize: 1024 * 1024 * 10, // 10MB
-      },
-      fileFilter: (req, file, callback) => {
-        if (file.mimetype.match(/\/(xml)$/)) {
-          callback(null, true);
-        } else {
-          callback(new BadRequestException('Unsupported file type'), false);
-        }
-      },
-    }),
-  )
-  @Post('upload')
-  uploadFile(@UploadedFile() file: Express.Multer.File | null) {
-    this.logger.log('Uploaded File: ', JSON.stringify(file));
-    if (!file) {
-      throw new BadRequestException('File upload failed');
+  ) file: Express.Multer.File) {
+    try {
+      this.xmlService.parseAsXml(file);
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
     }
+
     return {
       message: 'File uploaded successfully',
-      filename: file.filename,
-      path: `/uploads/${file.filename}`,
     };
   }
 }

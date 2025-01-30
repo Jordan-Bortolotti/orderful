@@ -1,19 +1,27 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { BadRequestException } from '@nestjs/common';
 import { XmlController } from '../../../src/xml/xml.controller';
 import { XmlService } from '../../../src/xml/xml.service';
+import { Logger } from 'nestjs-pino';
 
 describe('XmlController', () => {
   let controller: XmlController;
 
   const mockXmlService = {
-    getHello: jest.fn(),
+    parseAsXml: jest.fn(),
+  };
+  
+  const mockLogger = {
+    log: jest.fn(),
+    error: jest.fn()
   };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [XmlController],
-      providers: [{ provide: XmlService, useValue: mockXmlService }],
+      providers: [
+        { provide: XmlService, useValue: mockXmlService },
+        { provide: Logger, useValue: mockLogger }
+      ],
     }).compile();
 
     controller = module.get<XmlController>(XmlController);
@@ -23,37 +31,33 @@ describe('XmlController', () => {
     jest.clearAllMocks();
   });
 
-  describe('GET /', () => {
-    it('should return the hello message from the service', () => {
-      const expectedMessage = 'Hello from XML Service!';
-      mockXmlService.getHello.mockReturnValue(expectedMessage);
-
-      const result = controller.sayHello();
-
-      expect(result).toBe(expectedMessage);
-      expect(mockXmlService.getHello).toHaveBeenCalled();
-    });
-  });
-
-  describe('POST /upload', () => {
-    it('should return success response when a valid file is uploaded', () => {
-      const mockFile = {
-        filename: 'test.xml_1234.xml',
-        originalname: 'test.xml',
+  describe('POST /xml/to/{*format}', () => {
+    it('should return success response when a valid file is uploaded and not throw', () => {
+      const mockXmlFile = {
+        fieldname: 'file',
+        originalname: 'valid-xml-example.xml',
+        encoding: '7bit',
         mimetype: 'application/xml',
+        buffer: Buffer.from('<root><test>valid</test></root>'),
         size: 1024,
-        path: '/uploads/test.xml_1234.xml',
       } as Express.Multer.File;
 
-      expect(controller.uploadFile(mockFile)).toEqual({
+      expect(controller.xmlConvertToFormat(mockXmlFile)).toEqual({
         message: 'File uploaded successfully',
-        filename: mockFile.filename,
-        path: `/uploads/${mockFile.filename}`,
       });
     });
 
-    it('should throw BadRequestException when an invalid file is uploaded', () => {
-      expect(() => controller.uploadFile(null)).toThrow(BadRequestException);
+    it('should throw an exception when parsing an invalid file', () => {
+      const mockInvalidXmlFile = {
+        fieldname: 'file',
+        originalname: 'valid-xml-example.xml',
+        encoding: '7bit',
+        mimetype: 'application/xml',
+        buffer: Buffer.from('<root><unclosed>'),
+      } as Express.Multer.File;
+      mockXmlService.parseAsXml.mockImplementation(() => { throw new Error('Failed to parse invalid xml')})
+      
+      expect(() => controller.xmlConvertToFormat(mockInvalidXmlFile)).toThrow();
     });
   });
 });
