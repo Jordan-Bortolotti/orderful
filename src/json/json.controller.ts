@@ -9,31 +9,33 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { JsonService } from './json.service';
 import { Logger } from 'nestjs-pino';
-import { XmlService } from './xml.service';
-import { JsonService } from '../json/json.service';
+import { XmlService } from '../xml/xml.service';
 import { TextService } from '../text/text.service';
 import {
+  ValidateJsonFileParsing,
   FILE_TYPES,
-  ValidateXmlFileParsing,
-} from './pipes/parse-xml-file.pipe';
+} from './pipes/parse-json-file.pipe';
 
-@Controller('xml')
-export class XmlController {
+@Controller('json')
+export class JsonController {
   constructor(
-    private readonly xmlService: XmlService,
     private readonly jsonService: JsonService,
+    private readonly xmlService: XmlService,
     private readonly textService: TextService,
     private readonly logger: Logger,
   ) {}
 
-  @Post('/to/json')
+  @Post('/to/xml')
   @UseInterceptors(FileInterceptor('file'))
-  convertXmlToJson(
+  convertJsonToXml(
     @UploadedFile(
       new ParseFilePipeBuilder()
-        .addFileTypeValidator({ fileType: 'xml' })
-        .addValidator(new ValidateXmlFileParsing({ fileType: FILE_TYPES.XML }))
+        .addFileTypeValidator({ fileType: 'application/json' })
+        .addValidator(
+          new ValidateJsonFileParsing({ fileType: FILE_TYPES.JSON }),
+        )
         .build({
           fileIsRequired: true,
           errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY,
@@ -43,11 +45,11 @@ export class XmlController {
         }),
     )
     file: Express.Multer.File,
-  ): Record<string, any> {
+  ): string {
     let inputDataToTransform: Record<string, any>;
     try {
-      inputDataToTransform = this.xmlService.parseToPlainObject(file);
-      return this.jsonService.convertToJson(inputDataToTransform);
+      inputDataToTransform = this.jsonService.parseToPlainObject(file);
+      return this.xmlService.convertToXml(inputDataToTransform);
     } catch (error) {
       this.logger.error(error);
       throw error;
@@ -56,11 +58,13 @@ export class XmlController {
 
   @Post('/to/text')
   @UseInterceptors(FileInterceptor('file'))
-  convertXmlToText(
+  convertJsonToText(
     @UploadedFile(
       new ParseFilePipeBuilder()
-        .addFileTypeValidator({ fileType: 'xml' })
-        .addValidator(new ValidateXmlFileParsing({ fileType: FILE_TYPES.XML }))
+        .addFileTypeValidator({ fileType: 'json' })
+        .addValidator(
+          new ValidateJsonFileParsing({ fileType: FILE_TYPES.JSON }),
+        )
         .build({
           fileIsRequired: true,
           errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY,
@@ -77,7 +81,7 @@ export class XmlController {
     const lineSeparator = typeof line === 'string' ? line : '~';
     const elementSeparator = typeof el === 'string' ? el : '*';
     try {
-      inputDataToTransform = this.xmlService.parseToPlainObject(file);
+      inputDataToTransform = this.jsonService.parseToPlainObject(file);
       return this.textService.convertToText(
         inputDataToTransform,
         lineSeparator,

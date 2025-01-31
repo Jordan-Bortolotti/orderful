@@ -10,57 +10,32 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Logger } from 'nestjs-pino';
-import { XmlService } from './xml.service';
-import { JsonService } from '../json/json.service';
-import { TextService } from '../text/text.service';
+import { TextService } from './text.service';
+import { XmlService } from '../xml/xml.service';
 import {
+  ValidateTextFileParsing,
   FILE_TYPES,
-  ValidateXmlFileParsing,
-} from './pipes/parse-xml-file.pipe';
+} from './pipes/parse-text-file.pipe';
+import { JsonService } from '../json/json.service';
 
-@Controller('xml')
-export class XmlController {
+@Controller('text')
+export class TextController {
   constructor(
+    private readonly textService: TextService,
     private readonly xmlService: XmlService,
     private readonly jsonService: JsonService,
-    private readonly textService: TextService,
     private readonly logger: Logger,
   ) {}
 
-  @Post('/to/json')
+  @Post('/to/xml')
   @UseInterceptors(FileInterceptor('file'))
-  convertXmlToJson(
+  convertTextToXml(
     @UploadedFile(
       new ParseFilePipeBuilder()
-        .addFileTypeValidator({ fileType: 'xml' })
-        .addValidator(new ValidateXmlFileParsing({ fileType: FILE_TYPES.XML }))
-        .build({
-          fileIsRequired: true,
-          errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY,
-          exceptionFactory(error) {
-            throw new UnprocessableEntityException(error);
-          },
-        }),
-    )
-    file: Express.Multer.File,
-  ): Record<string, any> {
-    let inputDataToTransform: Record<string, any>;
-    try {
-      inputDataToTransform = this.xmlService.parseToPlainObject(file);
-      return this.jsonService.convertToJson(inputDataToTransform);
-    } catch (error) {
-      this.logger.error(error);
-      throw error;
-    }
-  }
-
-  @Post('/to/text')
-  @UseInterceptors(FileInterceptor('file'))
-  convertXmlToText(
-    @UploadedFile(
-      new ParseFilePipeBuilder()
-        .addFileTypeValidator({ fileType: 'xml' })
-        .addValidator(new ValidateXmlFileParsing({ fileType: FILE_TYPES.XML }))
+        .addFileTypeValidator({ fileType: 'text/plain' })
+        .addValidator(
+          new ValidateTextFileParsing({ fileType: FILE_TYPES.TEXT }),
+        )
         .build({
           fileIsRequired: true,
           errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY,
@@ -77,12 +52,49 @@ export class XmlController {
     const lineSeparator = typeof line === 'string' ? line : '~';
     const elementSeparator = typeof el === 'string' ? el : '*';
     try {
-      inputDataToTransform = this.xmlService.parseToPlainObject(file);
-      return this.textService.convertToText(
-        inputDataToTransform,
+      inputDataToTransform = this.textService.parseToPlainObject(
+        file,
         lineSeparator,
         elementSeparator,
       );
+      return this.xmlService.convertToXml(inputDataToTransform);
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
+  }
+
+  @Post('/to/json')
+  @UseInterceptors(FileInterceptor('file'))
+  convertTextToText(
+    @UploadedFile(
+      new ParseFilePipeBuilder()
+        .addFileTypeValidator({ fileType: 'text/plain' })
+        .addValidator(
+          new ValidateTextFileParsing({ fileType: FILE_TYPES.TEXT }),
+        )
+        .build({
+          fileIsRequired: true,
+          errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+          exceptionFactory(error) {
+            throw new UnprocessableEntityException(error);
+          },
+        }),
+    )
+    file: Express.Multer.File,
+    @Query('line') line: string,
+    @Query('el') el: string,
+  ) {
+    let inputDataToTransform: Record<string, any>;
+    try {
+      const lineSeparator = typeof line === 'string' ? line : '~';
+      const elementSeparator = typeof el === 'string' ? el : '*';
+      inputDataToTransform = this.textService.parseToPlainObject(
+        file,
+        lineSeparator,
+        elementSeparator,
+      );
+      return this.jsonService.convertToJson(inputDataToTransform);
     } catch (error) {
       this.logger.error(error);
       throw error;
