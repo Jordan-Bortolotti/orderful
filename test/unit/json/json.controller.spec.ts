@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { JsonController } from '../../../src/json/json.controller';
 import { JsonService } from '../../../src/json/json.service';
 import { XmlService } from '../../../src/xml/xml.service';
+import { TextService } from '../../../src/text/text.service';
 import { Logger } from 'nestjs-pino';
 
 describe('JsonController', () => {
@@ -15,6 +16,10 @@ describe('JsonController', () => {
     convertToXml: jest.fn(),
   };
 
+  const mockTextService = {
+    convertToText: jest.fn(),
+  };
+
   const mockLogger = {
     log: jest.fn(),
     error: jest.fn(),
@@ -26,6 +31,7 @@ describe('JsonController', () => {
       providers: [
         { provide: JsonService, useValue: mockJsonService },
         { provide: XmlService, useValue: mockXmlService },
+        { provide: TextService, useValue: mockTextService },
         { provide: Logger, useValue: mockLogger },
       ],
     }).compile();
@@ -68,6 +74,62 @@ describe('JsonController', () => {
       });
 
       expect(() => controller.convertJsonToXml(mockInvalidJsonFile)).toThrow();
+    });
+
+    describe('POST /json/to/text', () => {
+      it('should convert JSON to text with custom separators', () => {
+        const mockJsonFile = {
+          fieldname: 'file',
+          originalname: 'valid-json.json',
+          encoding: '7bit',
+          mimetype: 'application/json',
+          buffer: Buffer.from('{"test":"valid"}'),
+          size: 1024,
+        } as Express.Multer.File;
+
+        const mockTextResponse = 'test|valid+';
+        const mockParsedObject = { test: 'valid' };
+        const lineSeparator = '+';
+        const elementSeparator = '|';
+
+        mockJsonService.parseToPlainObject.mockReturnValue(mockParsedObject);
+        mockTextService.convertToText.mockReturnValue(mockTextResponse);
+
+        expect(
+          controller.convertJsonToText(
+            mockJsonFile,
+            lineSeparator,
+            elementSeparator,
+          ),
+        ).toEqual(mockTextResponse);
+
+        expect(mockTextService.convertToText).toHaveBeenCalledWith(
+          mockParsedObject,
+          lineSeparator,
+          elementSeparator,
+        );
+      });
+
+      it('should throw and log error when converting invalid JSON', () => {
+        const mockInvalidFile = {
+          fieldname: 'file',
+          originalname: 'invalid.json',
+          encoding: '7bit',
+          mimetype: 'application/json',
+          buffer: Buffer.from('invalid json'),
+          size: 1024,
+        } as Express.Multer.File;
+
+        const error = new Error('Invalid JSON');
+        mockJsonService.parseToPlainObject.mockImplementation(() => {
+          throw error;
+        });
+
+        expect(() =>
+          controller.convertJsonToText(mockInvalidFile, '~', '*'),
+        ).toThrow(error);
+        expect(mockLogger.error).toHaveBeenCalledWith(error);
+      });
     });
   });
 });

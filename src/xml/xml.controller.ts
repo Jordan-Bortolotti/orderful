@@ -3,6 +3,7 @@ import {
   HttpStatus,
   ParseFilePipeBuilder,
   Post,
+  Query,
   UnprocessableEntityException,
   UploadedFile,
   UseInterceptors,
@@ -11,13 +12,18 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { XmlService } from './xml.service';
 import { Logger } from 'nestjs-pino';
 import { JsonService } from '../json/json.service';
-import { FILE_TYPES, ValidateXmlFileParsing } from '../common/pipes/parse-xml-file.pipe';
+import { TextService } from '../text/text.service';
+import {
+  FILE_TYPES,
+  ValidateXmlFileParsing,
+} from './pipes/parse-xml-file.pipe';
 
 @Controller('xml')
 export class XmlController {
   constructor(
     private readonly xmlService: XmlService,
     private readonly jsonService: JsonService,
+    private readonly textService: TextService,
     private readonly logger: Logger,
   ) {}
 
@@ -64,18 +70,22 @@ export class XmlController {
         }),
     )
     file: Express.Multer.File,
-  ): Record<string, any> {
+    @Query('line') line: string,
+    @Query('el') el: string,
+  ): string {
     let inputDataToTransform: Record<string, any>;
+    const lineSeparator = typeof line === 'string' ? line : '~';
+    const elementSeparator = typeof el === 'string' ? el : '*';
     try {
       inputDataToTransform = this.xmlService.parseToPlainObject(file);
+      return this.textService.convertToText(
+        inputDataToTransform,
+        lineSeparator,
+        elementSeparator,
+      );
     } catch (error) {
       this.logger.error(error);
       throw error;
     }
-
-    return {
-      message: 'File uploaded successfully',
-      data: inputDataToTransform,
-    };
   }
 }

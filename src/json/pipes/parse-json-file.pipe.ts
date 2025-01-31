@@ -19,9 +19,9 @@ export class ValidateJsonFileParsing extends FileValidator {
 
   isValid(file: Express.Multer.File): boolean {
     try {
-        // throws error if json parsing fails
-        JSON.parse(file?.buffer.toString());
-        return true;
+      // throws error if json parsing fails
+      JSON.parse(file?.buffer.toString());
+      return true;
     } catch (error) {
       console.error(error);
       return false;

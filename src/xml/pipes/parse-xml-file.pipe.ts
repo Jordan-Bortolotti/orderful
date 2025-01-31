@@ -1,7 +1,8 @@
 import { Injectable, FileValidator } from '@nestjs/common';
+import { XMLParser } from 'fast-xml-parser';
 
 export enum FILE_TYPES {
-  TEXT = 'text',
+  XML = 'xml',
 }
 
 export interface IFileTypeOptions {
@@ -9,7 +10,7 @@ export interface IFileTypeOptions {
 }
 
 @Injectable()
-export class ValidateTextFileParsing extends FileValidator {
+export class ValidateXmlFileParsing extends FileValidator {
   protected validationOptions: { acceptedFileType: FILE_TYPES };
 
   constructor(options: IFileTypeOptions) {
@@ -19,7 +20,10 @@ export class ValidateTextFileParsing extends FileValidator {
 
   isValid(file: Express.Multer.File): boolean {
     try {
-        return this.validateDataStructure(file?.buffer.toString(), '~', '*');
+      const parser = new XMLParser();
+      // throws error if xml parsing fails
+      parser.parse(file?.buffer.toString(), true);
+      return true;
     } catch (error) {
       console.error(error);
       return false;
@@ -27,24 +31,5 @@ export class ValidateTextFileParsing extends FileValidator {
   }
   buildErrorMessage(file: Express.Multer.File): string {
     return `Provided file failed ${file.mimetype} validation`;
-  }
-
-  validateDataStructure(
-    input: string,
-    lineSeparator: string,
-    elementSeparator: string
-  ): boolean {
-    const lines = input.split(lineSeparator);
-    
-    for (const line of lines) {
-      if (!line.length) continue;
-      
-      const elements = line.split(elementSeparator);
-      const [key] = elements;
-  
-      if (!key?.length) return false;
-    }
-  
-    return true;
   }
 }

@@ -9,61 +9,32 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { JsonService } from './json.service';
+import { TextService } from './text.service';
 import { Logger } from 'nestjs-pino';
 import { XmlService } from '../xml/xml.service';
-import { TextService } from '../text/text.service';
 import {
-  ValidateJsonFileParsing,
+  ValidateTextFileParsing,
   FILE_TYPES,
-} from './pipes/parse-json-file.pipe';
+} from 'src/text/pipes/parse-text-file.pipe';
+import { JsonService } from 'src/json/json.service';
 
-@Controller('json')
-export class JsonController {
+@Controller('text')
+export class TextController {
   constructor(
-    private readonly jsonService: JsonService,
-    private readonly xmlService: XmlService,
     private readonly textService: TextService,
+    private readonly xmlService: XmlService,
+    private readonly jsonService: JsonService,
     private readonly logger: Logger,
   ) {}
 
   @Post('/to/xml')
   @UseInterceptors(FileInterceptor('file'))
-  convertJsonToXml(
+  convertTextToXml(
     @UploadedFile(
       new ParseFilePipeBuilder()
-        .addFileTypeValidator({ fileType: 'application/json' })
+        .addFileTypeValidator({ fileType: 'text/plain' })
         .addValidator(
-          new ValidateJsonFileParsing({ fileType: FILE_TYPES.JSON }),
-        )
-        .build({
-          fileIsRequired: true,
-          errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY,
-          exceptionFactory(error) {
-            throw new UnprocessableEntityException(error);
-          },
-        }),
-    )
-    file: Express.Multer.File,
-  ): string {
-    let inputDataToTransform: Record<string, any>;
-    try {
-      inputDataToTransform = this.jsonService.parseToPlainObject(file);
-      return this.xmlService.convertToXml(inputDataToTransform);
-    } catch (error) {
-      this.logger.error(error);
-      throw error;
-    }
-  }
-
-  @Post('/to/text')
-  @UseInterceptors(FileInterceptor('file'))
-  convertJsonToText(
-    @UploadedFile(
-      new ParseFilePipeBuilder()
-        .addFileTypeValidator({ fileType: 'json' })
-        .addValidator(
-          new ValidateJsonFileParsing({ fileType: FILE_TYPES.JSON }),
+          new ValidateTextFileParsing({ fileType: FILE_TYPES.TEXT }),
         )
         .build({
           fileIsRequired: true,
@@ -81,12 +52,49 @@ export class JsonController {
     const lineSeparator = typeof line === 'string' ? line : '~';
     const elementSeparator = typeof el === 'string' ? el : '*';
     try {
-      inputDataToTransform = this.jsonService.parseToPlainObject(file);
-      return this.textService.convertToText(
-        inputDataToTransform,
+      inputDataToTransform = this.textService.parseToPlainObject(
+        file,
         lineSeparator,
         elementSeparator,
       );
+      return this.xmlService.convertToXml(inputDataToTransform);
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
+  }
+
+  @Post('/to/json')
+  @UseInterceptors(FileInterceptor('file'))
+  convertTextToText(
+    @UploadedFile(
+      new ParseFilePipeBuilder()
+        .addFileTypeValidator({ fileType: 'text/plain' })
+        .addValidator(
+          new ValidateTextFileParsing({ fileType: FILE_TYPES.TEXT }),
+        )
+        .build({
+          fileIsRequired: true,
+          errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+          exceptionFactory(error) {
+            throw new UnprocessableEntityException(error);
+          },
+        }),
+    )
+    file: Express.Multer.File,
+    @Query('line') line: string,
+    @Query('el') el: string,
+  ) {
+    let inputDataToTransform: Record<string, any>;
+    try {
+      const lineSeparator = typeof line === 'string' ? line : '~';
+      const elementSeparator = typeof el === 'string' ? el : '*';
+      inputDataToTransform = this.textService.parseToPlainObject(
+        file,
+        lineSeparator,
+        elementSeparator,
+      );
+      return this.jsonService.convertToJson(inputDataToTransform);
     } catch (error) {
       this.logger.error(error);
       throw error;
