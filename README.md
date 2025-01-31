@@ -18,9 +18,14 @@ $ npm run start
 
 # watch mode
 $ npm run start:dev
+```
 
-# production mode
-$ npm run start:prod
+## Developer setup
+
+```bash
+$ npm install
+# for improved log formatting
+$ npm install -g pino-pretty
 ```
 
 ## Run tests
@@ -34,5 +39,11 @@ $ npm run test:e2e
 
 # test coverage
 $ npm run test:cov
+```
+
+## Example requests
+```bash
+curl --location 'http://<HostName>:3000/json/to/text?line=%5E&el=*' \
+--form 'file=@"<ProjectDirectory>/test/sample-json.json"'
 ```
 

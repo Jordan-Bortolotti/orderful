@@ -9,8 +9,8 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { XmlService } from './xml.service';
 import { Logger } from 'nestjs-pino';
+import { XmlService } from './xml.service';
 import { JsonService } from '../json/json.service';
 import { TextService } from '../text/text.service';
 import {

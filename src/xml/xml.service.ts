@@ -13,7 +13,7 @@ export class XmlService {
       parser.parse(file?.buffer.toString(), true)
     );
 
-    this.logger.log(
+    this.logger.verbose(
       `parsed File as Object:  ${JSON.stringify(parsedFile.root)}`,
     );
 
@@ -26,7 +26,7 @@ export class XmlService {
       { compact: true, ignoreComment: true, spaces: 4 },
     );
     const prependXmlVersionTag = '<?xml version="1.0" encoding="UTF-8"?>\n';
-    this.logger.log(
+    this.logger.verbose(
       `converted plain object to xml: ${prependXmlVersionTag + xml}`,
     );
 

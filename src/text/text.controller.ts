@@ -9,14 +9,14 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { TextService } from './text.service';
 import { Logger } from 'nestjs-pino';
+import { TextService } from './text.service';
 import { XmlService } from '../xml/xml.service';
 import {
   ValidateTextFileParsing,
   FILE_TYPES,
-} from 'src/text/pipes/parse-text-file.pipe';
-import { JsonService } from 'src/json/json.service';
+} from './pipes/parse-text-file.pipe';
+import { JsonService } from '../json/json.service';
 
 @Controller('text')
 export class TextController {

@@ -7,6 +7,7 @@ describe('XmlService', () => {
   const mockLogger = {
     log: jest.fn(),
     error: jest.fn(),
+    verbose: jest.fn(),
   };
 
   beforeEach(() => {

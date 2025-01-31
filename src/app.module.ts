@@ -11,7 +11,15 @@ import { TextModule } from './text/text.module';
     TextModule,
     XmlModule,
 
-    LoggerModule.forRoot(),
+    LoggerModule.forRoot({
+      pinoHttp: {
+        level: process.env.NODE_ENV !== 'production' ? 'debug' : 'info',
+        transport:
+          process.env.NODE_ENV !== 'production'
+            ? { target: 'pino-pretty' }
+            : undefined,
+      },
+    }),
     DevtoolsModule.register({
       http: process.env.NODE_ENV !== 'production',
     }),

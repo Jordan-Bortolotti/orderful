@@ -10,7 +10,7 @@ export class TextService {
     lineSeparator: string,
     elementSeparator: string,
   ): Record<string, Array<Record<string, string>>> {
-    this.logger.log(
+    this.logger.verbose(
       `Parsing file contents using passed in separators: ${file.buffer.toString('utf-8')}, lineSeparator: ${lineSeparator}, elementSeparator: ${elementSeparator}`,
       this.parseToPlainObject.name,
     );
@@ -50,7 +50,7 @@ export class TextService {
     elementSeparator: string,
   ): string {
     const lines: string[] = [];
-    this.logger.log(
+    this.logger.verbose(
       `converting plain object to text: ${JSON.stringify(plainObject)}, lineSeparator: ${lineSeparator}, elementSeparator: ${elementSeparator}`,
       this.convertToText.name,
     );
